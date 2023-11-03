@@ -1,8 +1,15 @@
 import useSWR, { mutate } from "swr";
-import { useLockFn } from "ahooks";
 import { useMemo, useRef, useState } from "react";
+import { useLockFn } from "ahooks";
+import { useSetRecoilState } from "recoil";
 import { Box, Button, Grid, IconButton, Stack, TextField } from "@mui/material";
-import { CachedRounded } from "@mui/icons-material";
+import {
+  ClearRounded,
+  ContentCopyRounded,
+  LocalFireDepartmentRounded,
+  RefreshRounded,
+  TextSnippetOutlined,
+} from "@mui/icons-material";
 import { useTranslation } from "react-i18next";
 import {
   getProfiles,
@@ -10,9 +17,11 @@ import {
   enhanceProfiles,
   getRuntimeLogs,
   deleteProfile,
+  updateProfile,
 } from "@/services/cmds";
+import { atomLoadingCache } from "@/services/states";
 import { closeAllConnections } from "@/services/api";
-import { BasePage, Notice } from "@/components/base";
+import { BasePage, DialogRef, Notice } from "@/components/base";
 import {
   ProfileViewer,
   ProfileViewerRef,
@@ -20,12 +29,15 @@ import {
 import { ProfileItem } from "@/components/profile/profile-item";
 import { ProfileMore } from "@/components/profile/profile-more";
 import { useProfiles } from "@/hooks/use-profiles";
+import { ConfigViewer } from "@/components/setting/mods/config-viewer";
+import { throttle } from "lodash-es";
 
 const ProfilePage = () => {
   const { t } = useTranslation();
 
   const [url, setUrl] = useState("");
   const [disabled, setDisabled] = useState(false);
+  const [activating, setActivating] = useState("");
 
   const {
     profiles = {},
@@ -41,6 +53,7 @@ const ProfilePage = () => {
 
   const chain = profiles.chain || [];
   const viewerRef = useRef<ProfileViewerRef>(null);
+  const configRef = useRef<DialogRef>(null);
 
   // distinguish type
   const { regularItems, enhanceItems } = useMemo(() => {
@@ -50,11 +63,12 @@ const ProfilePage = () => {
     const type1 = ["local", "remote"];
     const type2 = ["merge", "script"];
 
-    const regularItems = items.filter((i) => type1.includes(i.type!));
-    const restItems = items.filter((i) => type2.includes(i.type!));
+    const regularItems = items.filter((i) => i && type1.includes(i.type!));
+    const restItems = items.filter((i) => i && type2.includes(i.type!));
     const restMap = Object.fromEntries(restItems.map((i) => [i.uid, i]));
     const enhanceItems = chain
       .map((i) => restMap[i]!)
+      .filter(Boolean)
       .concat(restItems.filter((i) => !chain.includes(i.uid)));
 
     return { regularItems, enhanceItems };
@@ -89,6 +103,8 @@ const ProfilePage = () => {
 
   const onSelect = useLockFn(async (current: string, force: boolean) => {
     if (!force && current === profiles.current) return;
+    // 避免大多数情况下loading态闪烁
+    const reset = setTimeout(() => setActivating(current), 100);
     try {
       await patchProfiles({ current });
       mutateLogs();
@@ -97,6 +113,9 @@ const ProfilePage = () => {
       Notice.success("Refresh clash config", 1000);
     } catch (err: any) {
       Notice.error(err?.message || err.toString(), 4000);
+    } finally {
+      clearTimeout(reset);
+      setActivating("");
     }
   });
 
@@ -149,18 +168,70 @@ const ProfilePage = () => {
     mutateLogs();
   });
 
+  // 更新所有配置
+  const setLoadingCache = useSetRecoilState(atomLoadingCache);
+  const onUpdateAll = useLockFn(async () => {
+    const throttleMutate = throttle(mutateProfiles, 2000, {
+      trailing: true,
+    });
+    const updateOne = async (uid: string) => {
+      try {
+        await updateProfile(uid);
+        throttleMutate();
+      } finally {
+        setLoadingCache((cache) => ({ ...cache, [uid]: false }));
+      }
+    };
+
+    return new Promise((resolve) => {
+      setLoadingCache((cache) => {
+        // 获取没有正在更新的配置
+        const items = regularItems.filter(
+          (e) => e.type === "remote" && !cache[e.uid]
+        );
+        const change = Object.fromEntries(items.map((e) => [e.uid, true]));
+
+        Promise.allSettled(items.map((e) => updateOne(e.uid))).then(resolve);
+        return { ...cache, ...change };
+      });
+    });
+  });
+
+  const onCopyLink = async () => {
+    const text = await navigator.clipboard.readText();
+    if (text) setUrl(text);
+  };
+
   return (
     <BasePage
       title={t("Profiles")}
       header={
-        <Box sx={{ mt: 1, display: "flex", alignItems: "center" }}>
+        <Box sx={{ mt: 1, display: "flex", alignItems: "center", gap: 1 }}>
           <IconButton
             size="small"
             color="inherit"
-            title={t("Refresh profiles")}
+            title={t("Update All Profiles")}
+            onClick={onUpdateAll}
+          >
+            <RefreshRounded />
+          </IconButton>
+
+          <IconButton
+            size="small"
+            color="inherit"
+            title={t("View Runtime Config")}
+            onClick={() => configRef.current?.open()}
+          >
+            <TextSnippetOutlined />
+          </IconButton>
+
+          <IconButton
+            size="small"
+            color="primary"
+            title={t("Reactivate Profiles")}
             onClick={onEnhance}
           >
-            <CachedRounded />
+            <LocalFireDepartmentRounded />
           </IconButton>
         </Box>
       }
@@ -177,6 +248,28 @@ const ProfilePage = () => {
           onChange={(e) => setUrl(e.target.value)}
           sx={{ input: { py: 0.65, px: 1.25 } }}
           placeholder={t("Profile URL")}
+          InputProps={{
+            sx: { pr: 1 },
+            endAdornment: !url ? (
+              <IconButton
+                size="small"
+                sx={{ p: 0.5 }}
+                title={t("Paste")}
+                onClick={onCopyLink}
+              >
+                <ContentCopyRounded fontSize="inherit" />
+              </IconButton>
+            ) : (
+              <IconButton
+                size="small"
+                sx={{ p: 0.5 }}
+                title={t("Clear")}
+                onClick={() => setUrl("")}
+              >
+                <ClearRounded fontSize="inherit" />
+              </IconButton>
+            ),
+          }}
         />
         <Button
           disabled={!url || disabled}
@@ -201,6 +294,7 @@ const ProfilePage = () => {
             <Grid item xs={12} sm={6} md={4} lg={3} key={item.file}>
               <ProfileItem
                 selected={profiles.current === item.uid}
+                activating={activating === item.uid}
                 itemData={item}
                 onSelect={(f) => onSelect(item.uid, f)}
                 onEdit={() => viewerRef.current?.edit(item)}
@@ -232,6 +326,7 @@ const ProfilePage = () => {
       )}
 
       <ProfileViewer ref={viewerRef} onChange={() => mutateProfiles()} />
+      <ConfigViewer ref={configRef} />
     </BasePage>
   );
 };

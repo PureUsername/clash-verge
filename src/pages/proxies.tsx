@@ -2,12 +2,17 @@ import useSWR from "swr";
 import { useEffect, useMemo } from "react";
 import { useLockFn } from "ahooks";
 import { useTranslation } from "react-i18next";
-import { Button, ButtonGroup, Paper } from "@mui/material";
-import { getClashConfig, updateConfigs } from "@/services/api";
+import { Box, Button, ButtonGroup, Paper } from "@mui/material";
+import {
+  closeAllConnections,
+  getClashConfig,
+  updateConfigs,
+} from "@/services/api";
 import { patchClashConfig } from "@/services/cmds";
 import { useVerge } from "@/hooks/use-verge";
 import { BasePage } from "@/components/base";
 import { ProxyGroups } from "@/components/proxy/proxy-groups";
+import { ProviderButton } from "@/components/proxy/provider-button";
 
 const ProxyPage = () => {
   const { t } = useTranslation();
@@ -26,9 +31,13 @@ const ProxyPage = () => {
     return ["rule", "global", "direct", "script"];
   }, [verge?.clash_core]);
 
-  const curMode = clashConfig?.mode.toLowerCase();
+  const curMode = clashConfig?.mode?.toLowerCase();
 
   const onChangeMode = useLockFn(async (mode: string) => {
+    // 断开连接
+    if (mode !== curMode && verge?.auto_close_connection) {
+      closeAllConnections();
+    }
     await updateConfigs({ mode });
     await patchClashConfig({ mode });
     mutateClash();
@@ -45,18 +54,22 @@ const ProxyPage = () => {
       contentStyle={{ height: "100%" }}
       title={t("Proxy Groups")}
       header={
-        <ButtonGroup size="small">
-          {modeList.map((mode) => (
-            <Button
-              key={mode}
-              variant={mode === curMode ? "contained" : "outlined"}
-              onClick={() => onChangeMode(mode)}
-              sx={{ textTransform: "capitalize" }}
-            >
-              {t(mode)}
-            </Button>
-          ))}
-        </ButtonGroup>
+        <Box display="flex" alignItems="center" gap={1}>
+          <ProviderButton />
+
+          <ButtonGroup size="small">
+            {modeList.map((mode) => (
+              <Button
+                key={mode}
+                variant={mode === curMode ? "contained" : "outlined"}
+                onClick={() => onChangeMode(mode)}
+                sx={{ textTransform: "capitalize" }}
+              >
+                {t(mode)}
+              </Button>
+            ))}
+          </ButtonGroup>
+        </Box>
       }
     >
       <Paper

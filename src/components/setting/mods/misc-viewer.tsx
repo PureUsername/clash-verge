@@ -19,22 +19,26 @@ export const MiscViewer = forwardRef<DialogRef>((props, ref) => {
 
   const [open, setOpen] = useState(false);
   const [values, setValues] = useState({
+    appLogLevel: "info",
     autoCloseConnection: false,
     enableClashFields: true,
     enableBuiltinEnhanced: true,
     proxyLayoutColumn: 6,
     defaultLatencyTest: "",
+    autoLogClean: 0,
   });
 
   useImperativeHandle(ref, () => ({
     open: () => {
       setOpen(true);
       setValues({
+        appLogLevel: verge?.app_log_level ?? "info",
         autoCloseConnection: verge?.auto_close_connection ?? false,
         enableClashFields: verge?.enable_clash_fields ?? true,
         enableBuiltinEnhanced: verge?.enable_builtin_enhanced ?? true,
         proxyLayoutColumn: verge?.proxy_layout_column || 6,
         defaultLatencyTest: verge?.default_latency_test || "",
+        autoLogClean: verge?.auto_log_clean || 0,
       });
     },
     close: () => setOpen(false),
@@ -43,11 +47,13 @@ export const MiscViewer = forwardRef<DialogRef>((props, ref) => {
   const onSave = useLockFn(async () => {
     try {
       await patchVerge({
+        app_log_level: values.appLogLevel,
         auto_close_connection: values.autoCloseConnection,
         enable_clash_fields: values.enableClashFields,
         enable_builtin_enhanced: values.enableBuiltinEnhanced,
         proxy_layout_column: values.proxyLayoutColumn,
         default_latency_test: values.defaultLatencyTest,
+        auto_log_clean: values.autoLogClean as any,
       });
       setOpen(false);
     } catch (err: any) {
@@ -68,7 +74,28 @@ export const MiscViewer = forwardRef<DialogRef>((props, ref) => {
     >
       <List>
         <ListItem sx={{ padding: "5px 2px" }}>
-          <ListItemText primary="Auto Close Connections" />
+          <ListItemText primary={t("App Log Level")} />
+          <Select
+            size="small"
+            sx={{ width: 100, "> div": { py: "7.5px" } }}
+            value={values.appLogLevel}
+            onChange={(e) => {
+              setValues((v) => ({
+                ...v,
+                appLogLevel: e.target.value as string,
+              }));
+            }}
+          >
+            {["trace", "debug", "info", "warn", "error", "silent"].map((i) => (
+              <MenuItem value={i} key={i}>
+                {i[0].toUpperCase() + i.slice(1).toLowerCase()}
+              </MenuItem>
+            ))}
+          </Select>
+        </ListItem>
+
+        <ListItem sx={{ padding: "5px 2px" }}>
+          <ListItemText primary={t("Auto Close Connections")} />
           <Switch
             edge="end"
             checked={values.autoCloseConnection}
@@ -79,7 +106,7 @@ export const MiscViewer = forwardRef<DialogRef>((props, ref) => {
         </ListItem>
 
         <ListItem sx={{ padding: "5px 2px" }}>
-          <ListItemText primary="Clash Fields Filter" />
+          <ListItemText primary={t("Enable Clash Fields Filter")} />
           <Switch
             edge="end"
             checked={values.enableClashFields}
@@ -90,7 +117,7 @@ export const MiscViewer = forwardRef<DialogRef>((props, ref) => {
         </ListItem>
 
         <ListItem sx={{ padding: "5px 2px" }}>
-          <ListItemText primary="Enable Builtin Enhanced" />
+          <ListItemText primary={t("Enable Builtin Enhanced")} />
           <Switch
             edge="end"
             checked={values.enableBuiltinEnhanced}
@@ -101,10 +128,10 @@ export const MiscViewer = forwardRef<DialogRef>((props, ref) => {
         </ListItem>
 
         <ListItem sx={{ padding: "5px 2px" }}>
-          <ListItemText primary="Proxy Layout Column" />
+          <ListItemText primary={t("Proxy Layout Column")} />
           <Select
             size="small"
-            sx={{ width: 100, "> div": { py: "7.5px" } }}
+            sx={{ width: 135, "> div": { py: "7.5px" } }}
             value={values.proxyLayoutColumn}
             onChange={(e) => {
               setValues((v) => ({
@@ -125,7 +152,33 @@ export const MiscViewer = forwardRef<DialogRef>((props, ref) => {
         </ListItem>
 
         <ListItem sx={{ padding: "5px 2px" }}>
-          <ListItemText primary="Default Latency Test" />
+          <ListItemText primary={t("Auto Log Clean")} />
+          <Select
+            size="small"
+            sx={{ width: 135, "> div": { py: "7.5px" } }}
+            value={values.autoLogClean}
+            onChange={(e) => {
+              setValues((v) => ({
+                ...v,
+                autoLogClean: e.target.value as number,
+              }));
+            }}
+          >
+            {[
+              { key: "Never Clean", value: 0 },
+              { key: "Retain 7 Days", value: 1 },
+              { key: "Retain 30 Days", value: 2 },
+              { key: "Retain 90 Days", value: 3 },
+            ].map((i) => (
+              <MenuItem key={i.value} value={i.value}>
+                {t(i.key)}
+              </MenuItem>
+            ))}
+          </Select>
+        </ListItem>
+
+        <ListItem sx={{ padding: "5px 2px" }}>
+          <ListItemText primary={t("Default Latency Test")} />
           <TextField
             size="small"
             autoComplete="off"

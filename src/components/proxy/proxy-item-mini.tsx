@@ -137,20 +137,14 @@ export const ProxyItemMini = (props: Props) => {
               e.stopPropagation();
               onDelay();
             }}
-            color={
-              delay > 500
-                ? "error.main"
-                : delay < 100
-                ? "success.main"
-                : "text.secondary"
-            }
+            color={delayManager.formatDelayColor(delay)}
             sx={({ palette }) =>
               !proxy.provider
                 ? { ":hover": { bgcolor: alpha(palette.primary.main, 0.15) } }
                 : {}
             }
           >
-            {delay > 1e5 ? "Error" : delay > 3000 ? "Timeout" : `${delay}`}
+            {delayManager.formatDelay(delay)}
           </Widget>
         )}
 
@@ -166,19 +160,21 @@ export const ProxyItemMini = (props: Props) => {
   );
 };
 
-const Widget = styled(Box)(() => ({
+const Widget = styled(Box)(({ theme: { typography } }) => ({
   padding: "3px 6px",
   fontSize: 14,
+  fontFamily: typography.fontFamily,
   borderRadius: "4px",
 }));
 
-const TypeBox = styled(Box)(({ theme }) => ({
+const TypeBox = styled(Box)(({ theme: { palette, typography } }) => ({
   display: "inline-block",
   border: "1px solid #ccc",
-  borderColor: alpha(theme.palette.text.secondary, 0.36),
-  color: alpha(theme.palette.text.secondary, 0.42),
+  borderColor: alpha(palette.text.secondary, 0.36),
+  color: alpha(palette.text.secondary, 0.42),
   borderRadius: 4,
   fontSize: 10,
+  fontFamily: typography.fontFamily,
   marginRight: "4px",
   padding: "0 2px",
   lineHeight: 1.25,

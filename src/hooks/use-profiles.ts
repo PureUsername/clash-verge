@@ -32,7 +32,7 @@ export const useProfiles = () => {
     if (!profileData || !proxiesData) return;
 
     const current = profileData.items?.find(
-      (e) => e.uid === profileData.current
+      (e) => e && e.uid === profileData.current
     );
 
     if (!current) return;
@@ -49,15 +49,10 @@ export const useProfiles = () => {
     const { global, groups } = proxiesData;
 
     [global, ...groups].forEach(({ type, name, now }) => {
-      if (!now || (type !== "Selector" && type !== "Fallback")) return;
+      if (!now || type !== "Selector") return;
       if (selectedMap[name] != null && selectedMap[name] !== now) {
         hasChange = true;
         updateProxy(name, selectedMap[name]);
-        console.log({
-          name,
-          now,
-          select: selectedMap[name],
-        });
       }
       newSelected.push({ name, now: selectedMap[name] });
     });
@@ -70,7 +65,7 @@ export const useProfiles = () => {
 
   return {
     profiles,
-    current: profiles?.items?.find((p) => p.uid === profiles.current),
+    current: profiles?.items?.find((p) => p && p.uid === profiles.current),
     activateSelected,
     patchProfiles,
     patchCurrent,

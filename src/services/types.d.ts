@@ -153,11 +153,13 @@ interface IProfilesConfig {
 }
 
 interface IVergeConfig {
+  app_log_level?: "trace" | "debug" | "info" | "warn" | "error" | string;
   language?: string;
   clash_core?: string;
   theme_mode?: "light" | "dark" | "system";
   theme_blur?: boolean;
   traffic_graph?: boolean;
+  enable_memory_usage?: boolean;
   enable_tun_mode?: boolean;
   enable_auto_launch?: boolean;
   enable_service_mode?: boolean;
@@ -184,6 +186,7 @@ interface IVergeConfig {
   default_latency_test?: string;
   enable_clash_fields?: boolean;
   enable_builtin_enhanced?: boolean;
+  auto_log_clean?: 0 | 1 | 2 | 3;
   proxy_layout_column?: number;
 }
 

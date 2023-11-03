@@ -115,7 +115,7 @@ export const ProfileViewer = forwardRef<ProfileViewerRef, Props>(
           fileDataRef.current = null;
           props.onChange();
         } catch (err: any) {
-          Notice.error(err.message);
+          Notice.error(err.message || err.toString());
         }
       })
     );
@@ -143,7 +143,7 @@ export const ProfileViewer = forwardRef<ProfileViewerRef, Props>(
       <BaseDialog
         open={open}
         title={openType === "new" ? t("Create Profile") : t("Edit Profile")}
-        contentSx={{ width: 375, pb: 0, maxHeight: 320 }}
+        contentSx={{ width: 375, pb: 0, maxHeight: "80%" }}
         okBtn={t("Save")}
         cancelBtn={t("Cancel")}
         onClose={handleClose}
@@ -188,7 +188,12 @@ export const ProfileViewer = forwardRef<ProfileViewerRef, Props>(
               name="url"
               control={control}
               render={({ field }) => (
-                <TextField {...text} {...field} label={t("Subscription URL")} />
+                <TextField
+                  {...text}
+                  {...field}
+                  multiline
+                  label={t("Subscription URL")}
+                />
               )}
             />
 

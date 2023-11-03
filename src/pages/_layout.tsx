@@ -13,12 +13,13 @@ import { getAxios } from "@/services/api";
 import { useVerge } from "@/hooks/use-verge";
 import { ReactComponent as LogoSvg } from "@/assets/image/logo.svg";
 import { BaseErrorBoundary, Notice } from "@/components/base";
-import LayoutItem from "@/components/layout/layout-item";
-import LayoutControl from "@/components/layout/layout-control";
-import LayoutTraffic from "@/components/layout/layout-traffic";
-import UpdateButton from "@/components/layout/update-button";
-import useCustomTheme from "@/components/layout/use-custom-theme";
+import { LayoutItem } from "@/components/layout/layout-item";
+import { LayoutControl } from "@/components/layout/layout-control";
+import { LayoutTraffic } from "@/components/layout/layout-traffic";
+import { UpdateButton } from "@/components/layout/update-button";
+import { useCustomTheme } from "@/components/layout/use-custom-theme";
 import getSystem from "@/utils/get-system";
+import "dayjs/locale/ru";
 import "dayjs/locale/zh-cn";
 
 dayjs.extend(relativeTime);
@@ -35,9 +36,9 @@ const Layout = () => {
 
   useEffect(() => {
     window.addEventListener("keydown", (e) => {
-      if (e.key === "Escape") {
-        if (OS === "macos") appWindow.hide();
-        else appWindow.close();
+      // macOS有cmd+w
+      if (e.key === "Escape" && OS !== "macos") {
+        appWindow.close();
       }
     });
 
@@ -47,6 +48,7 @@ const Layout = () => {
       mutate("getProxies");
       mutate("getVersion");
       mutate("getClashConfig");
+      mutate("getProviders");
     });
 
     // update the verge config
@@ -76,7 +78,7 @@ const Layout = () => {
   }, [language]);
 
   return (
-    <SWRConfig value={{}}>
+    <SWRConfig value={{ errorRetryCount: 3 }}>
       <ThemeProvider theme={theme}>
         <Paper
           square
@@ -87,7 +89,17 @@ const Layout = () => {
           }}
           onContextMenu={(e) => {
             // only prevent it on Windows
-            if (OS === "windows") e.preventDefault();
+            const validList = ["input", "textarea"];
+            const target = e.currentTarget;
+            if (
+              OS === "windows" &&
+              !(
+                validList.includes(target.tagName.toLowerCase()) ||
+                target.isContentEditable
+              )
+            ) {
+              e.preventDefault();
+            }
           }}
           sx={[
             ({ palette }) => ({
@@ -125,13 +137,19 @@ const Layout = () => {
             )}
 
             <div className="the-content">
-              <BaseErrorBoundary>
-                <Routes>
-                  {routers.map(({ label, link, ele: Ele }) => (
-                    <Route key={label} path={link} element={<Ele />} />
-                  ))}
-                </Routes>
-              </BaseErrorBoundary>
+              <Routes>
+                {routers.map(({ label, link, ele: Ele }) => (
+                  <Route
+                    key={label}
+                    path={link}
+                    element={
+                      <BaseErrorBoundary key={label}>
+                        <Ele />
+                      </BaseErrorBoundary>
+                    }
+                  />
+                ))}
+              </Routes>
             </div>
           </div>
         </Paper>

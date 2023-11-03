@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useLockFn } from "ahooks";
 import {
   Box,
@@ -17,8 +17,13 @@ import { closeAllConnections } from "@/services/api";
 import { atomConnectionSetting } from "@/services/states";
 import { useClashInfo } from "@/hooks/use-clash";
 import { BaseEmpty, BasePage } from "@/components/base";
-import ConnectionItem from "@/components/connection/connection-item";
-import ConnectionTable from "@/components/connection/connection-table";
+import { useWebsocket } from "@/hooks/use-websocket";
+import { ConnectionItem } from "@/components/connection/connection-item";
+import { ConnectionTable } from "@/components/connection/connection-table";
+import {
+  ConnectionDetail,
+  ConnectionDetailRef,
+} from "@/components/connection/connection-detail";
 
 const initConn = { uploadTotal: 0, downloadTotal: 0, connections: [] };
 
@@ -53,23 +58,18 @@ const ConnectionsPage = () => {
     return connections;
   }, [connData, filterText, curOrderOpt]);
 
-  useEffect(() => {
-    if (!clashInfo) return;
-
-    const { server = "", secret = "" } = clashInfo;
-    const ws = new WebSocket(`ws://${server}/connections?token=${secret}`);
-
-    ws.addEventListener("message", (event) => {
+  const { connect, disconnect } = useWebsocket(
+    (event) => {
+      // meta v1.15.0 出现data.connections为null的情况
       const data = JSON.parse(event.data) as IConnections;
-
       // 尽量与前一次connections的展示顺序保持一致
       setConnData((old) => {
         const oldConn = old.connections;
-        const maxLen = data.connections.length;
+        const maxLen = data.connections?.length;
 
         const connections: typeof oldConn = [];
 
-        const rest = data.connections.filter((each) => {
+        const rest = (data.connections || []).filter((each) => {
           const index = oldConn.findIndex((o) => o.id === each.id);
 
           if (index >= 0 && index < maxLen) {
@@ -93,23 +93,34 @@ const ConnectionsPage = () => {
 
         return { ...data, connections };
       });
-    });
+    },
+    { errorCount: 3, retryInterval: 1000 }
+  );
 
-    return () => ws?.close();
+  useEffect(() => {
+    if (!clashInfo) return;
+
+    const { server = "", secret = "" } = clashInfo;
+    connect(`ws://${server}/connections?token=${encodeURIComponent(secret)}`);
+
+    return () => {
+      disconnect();
+    };
   }, [clashInfo]);
 
   const onCloseAll = useLockFn(closeAllConnections);
+
+  const detailRef = useRef<ConnectionDetailRef>(null!);
 
   return (
     <BasePage
       title={t("Connections")}
       contentStyle={{ height: "100%" }}
       header={
-        <Box sx={{ mt: 1, display: "flex", alignItems: "center" }}>
+        <Box sx={{ mt: 1, display: "flex", alignItems: "center", gap: 2 }}>
           <IconButton
             color="inherit"
             size="small"
-            sx={{ mr: 2 }}
             onClick={() =>
               setSetting((o) =>
                 o.layout === "list"
@@ -181,14 +192,24 @@ const ConnectionsPage = () => {
           {filterConn.length === 0 ? (
             <BaseEmpty text="No Connections" />
           ) : isTableLayout ? (
-            <ConnectionTable connections={filterConn} />
+            <ConnectionTable
+              connections={filterConn}
+              onShowDetail={(detail) => detailRef.current?.open(detail)}
+            />
           ) : (
             <Virtuoso
               data={filterConn}
-              itemContent={(index, item) => <ConnectionItem value={item} />}
+              itemContent={(index, item) => (
+                <ConnectionItem
+                  value={item}
+                  onShowDetail={() => detailRef.current?.open(item)}
+                />
+              )}
             />
           )}
         </Box>
+
+        <ConnectionDetail ref={detailRef} />
       </Paper>
     </BasePage>
   );

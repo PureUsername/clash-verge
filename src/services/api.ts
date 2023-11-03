@@ -27,6 +27,7 @@ export const getAxios = async (force: boolean = false) => {
   axiosIns = axios.create({
     baseURL: `http://${server}`,
     headers: secret ? { Authorization: `Bearer ${secret}` } : {},
+    timeout: 15000,
   });
   axiosIns.interceptors.response.use((r) => r.data);
   return axiosIns;
@@ -64,7 +65,7 @@ export const getRules = async () => {
 /// Get Proxy delay
 export const getProxyDelay = async (name: string, url?: string) => {
   const params = {
-    timeout: 5000,
+    timeout: 10000,
     url: url || "http://www.gstatic.com/generate_204",
   };
   const instance = await getAxios();
@@ -166,6 +167,11 @@ export const providerHealthCheck = async (name: string) => {
   return instance.get(
     `/providers/proxies/${encodeURIComponent(name)}/healthcheck`
   );
+};
+
+export const providerUpdate = async (name: string) => {
+  const instance = await getAxios();
+  return instance.put(`/providers/proxies/${encodeURIComponent(name)}`);
 };
 
 export const getConnections = async () => {

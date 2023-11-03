@@ -1,3 +1,153 @@
+## v1.3.8
+
+### Features
+
+- update clash meta core
+- add default valid keys
+- adjust the delay display interval and color
+
+### Bug Fixes
+
+- fix connections page undefined exception
+
+---
+
+## v1.3.7
+
+### Features
+
+- update clash and clash meta core
+- profiles page add paste button
+- subscriptions url textfield use multi lines
+- set min window size
+- add check for updates buttons
+- add open dashboard to the hotkey list
+
+### Bug Fixes
+
+- fix profiles page undefined exception
+
+---
+
+## v1.3.6
+
+### Features
+
+- add russian translation
+- support to show connection detail
+- support clash meta memory usage display
+- support proxy provider update ui
+- update geo data file from meta repo
+- adjust setting page
+
+### Bug Fixes
+
+- center the window when it is out of screen
+- use `sudo` when `pkexec` not found (Linux)
+- reconnect websocket when window focus
+
+### Notes
+
+- The current version of the Linux installation package is built by Ubuntu 20.04 (Github Action).
+
+---
+
+## v1.3.5
+
+### Features
+
+- update clash core
+
+### Bug Fixes
+
+- fix blurry system tray icon (Windows)
+- fix v1.3.4 wintun.dll not found (Windows)
+- fix v1.3.4 clash core not found (macOS, Linux)
+
+---
+
+## v1.3.4
+
+### Features
+
+- update clash and clash meta core
+- optimize traffic graph high CPU usage when window hidden
+- use polkit to elevate permission (Linux)
+- support app log level setting
+- support copy environment variable
+- overwrite resource file according to file modified
+- save window size and position
+
+### Bug Fixes
+
+- remove fallback group select status
+- enable context menu on editable element (Windows)
+
+---
+
+## v1.3.3
+
+### Features
+
+- update clash and clash meta core
+- show tray icon variants in different system proxy status (Windows)
+- close all connections when mode changed
+
+### Bug Fixes
+
+- encode controller secret into uri
+- error boundary for each page
+
+---
+
+## v1.3.2
+
+### Features
+
+- update clash and clash meta core
+
+### Bug Fixes
+
+- fix import url issue
+- fix profile undefined issue
+
+---
+
+## v1.3.1
+
+### Features
+
+- update clash and clash meta core
+
+### Bug Fixes
+
+- fix open url issue
+- fix appimage path panic
+- fix grant root permission in macOS
+- fix linux system proxy default bypass
+
+---
+
+## v1.3.0
+
+### Features
+
+- update clash and clash meta
+- support opening dir on tray
+- support updating all profiles with one click
+- support granting root permission to clash core(Linux, macOS)
+- support enable/disable clash fields filter, feel free to experience the latest features of Clash Meta
+
+### Bug Fixes
+
+- deb add openssl depend(Linux)
+- fix the AppImage auto launch path(Linux)
+- fix get the default network service(macOS)
+- remove the esc key listener in macOS, cmd+w instead(macOS)
+- fix infinite retry when websocket error
+
+---
+
 ## v1.2.3
 
 ### Features

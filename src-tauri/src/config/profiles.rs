@@ -38,7 +38,7 @@ impl IProfiles {
                 }
                 // compatible with the old old old version
                 profiles.items.as_mut().map(|items| {
-                    for mut item in items.iter_mut() {
+                    for item in items.iter_mut() {
                         if item.uid.is_none() {
                             item.uid = Some(help::get_uid("d"));
                         }
@@ -55,7 +55,7 @@ impl IProfiles {
 
     pub fn template() -> Self {
         Self {
-            valid: Some(vec!["dns".into()]),
+            valid: Some(vec!["dns".into(), "sub-rules".into(), "unified-delay".into()]),
             items: Some(vec![]),
             ..Self::default()
         }
@@ -138,9 +138,9 @@ impl IProfiles {
             let path = dirs::app_profiles_dir()?.join(&file);
 
             fs::File::create(path)
-                .context(format!("failed to create file \"{}\"", file))?
+                .with_context(|| format!("failed to create file \"{}\"", file))?
                 .write(file_data.as_bytes())
-                .context(format!("failed to write to file \"{}\"", file))?;
+                .with_context(|| format!("failed to write to file \"{}\"", file))?;
         }
 
         if self.items.is_none() {
@@ -155,7 +155,7 @@ impl IProfiles {
     pub fn patch_item(&mut self, uid: String, item: PrfItem) -> Result<()> {
         let mut items = self.items.take().unwrap_or(vec![]);
 
-        for mut each in items.iter_mut() {
+        for each in items.iter_mut() {
             if each.uid == Some(uid.clone()) {
                 patch!(each, item, itype);
                 patch!(each, item, name);
@@ -189,7 +189,7 @@ impl IProfiles {
         if let Some(items) = self.items.as_mut() {
             let some_uid = Some(uid.clone());
 
-            for mut each in items.iter_mut() {
+            for each in items.iter_mut() {
                 if each.uid == some_uid {
                     each.extra = item.extra;
                     each.updated = item.updated;
@@ -207,9 +207,9 @@ impl IProfiles {
                         let path = dirs::app_profiles_dir()?.join(&file);
 
                         fs::File::create(path)
-                            .context(format!("failed to create file \"{}\"", file))?
+                            .with_context(|| format!("failed to create file \"{}\"", file))?
                             .write(file_data.as_bytes())
-                            .context(format!("failed to write to file \"{}\"", file))?;
+                            .with_context(|| format!("failed to write to file \"{}\"", file))?;
                     }
 
                     break;

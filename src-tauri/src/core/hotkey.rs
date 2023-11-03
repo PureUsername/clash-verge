@@ -4,7 +4,7 @@ use once_cell::sync::OnceCell;
 use parking_lot::Mutex;
 use std::{collections::HashMap, sync::Arc};
 use tauri::{AppHandle, GlobalShortcutManager};
-use tauri_runtime_wry::wry::application::accelerator::Accelerator;
+use wry::application::accelerator::Accelerator;
 
 pub struct Hotkey {
     current: Arc<Mutex<Vec<String>>>, // 保存当前的热键设置
@@ -76,6 +76,7 @@ impl Hotkey {
         }
 
         let f = match func.trim() {
+            "open_dashboard" => || feat::open_dashboard(),
             "clash_mode_rule" => || feat::change_clash_mode("rule".into()),
             "clash_mode_global" => || feat::change_clash_mode("global".into()),
             "clash_mode_direct" => || feat::change_clash_mode("direct".into()),

@@ -177,11 +177,11 @@ pub async fn restart_sidecar() -> CmdResult {
 
 #[tauri::command]
 pub fn grant_permission(core: String) -> CmdResult {
-    #[cfg(target_os = "macos")]
+    #[cfg(any(target_os = "macos", target_os = "linux"))]
     return wrap_err!(manager::grant_permission(core));
 
-    #[cfg(not(target_os = "macos"))]
-    return Err("Unsupported target");
+    #[cfg(not(any(target_os = "macos", target_os = "linux")))]
+    return Err("Unsupported target".into());
 }
 
 /// get the system proxy
@@ -227,6 +227,17 @@ pub fn open_logs_dir() -> CmdResult<()> {
 #[tauri::command]
 pub fn open_web_url(url: String) -> CmdResult<()> {
     wrap_err!(open::that(url))
+}
+
+#[tauri::command]
+pub async fn clash_api_get_proxy_delay(
+    name: String,
+    url: Option<String>,
+) -> CmdResult<clash_api::DelayRes> {
+    match clash_api::get_proxy_delay(name, url).await {
+        Ok(res) => Ok(res),
+        Err(err) => Err(format!("{}", err.to_string())),
+    }
 }
 
 #[cfg(windows)]
